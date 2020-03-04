@@ -47,11 +47,6 @@ func ReadString(key, def string) string {
 	return def
 }
 
-func ReadStringOrDie(key string) string {
-	keyOrDie(key)
-	return viper.GetString(key)
-}
-
 func ReadStringSliceOrDie(key string) []string {
 	keyOrDie(key)
 	return viper.GetStringSlice(key)

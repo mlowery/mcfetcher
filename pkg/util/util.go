@@ -17,7 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func FileExists(p string) (bool, error) {
+func fileExists(p string) (bool, error) {
 	if _, err := os.Stat(p); err == nil {
 		return true, nil
 	} else if os.IsNotExist(err) {
@@ -55,7 +55,7 @@ func EnsureWorkDir(subDirs ...string) (string, error) {
 }
 
 func ReadRawObjects(path string) ([]*unstructured.Unstructured, error) {
-	exists, err := FileExists(path)
+	exists, err := fileExists(path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to check for file existence")
 	}
