@@ -1,0 +1,25 @@
+[gvk."namespace."]
+    # no labels except these are kept
+    keep-labels = [
+        "^github.com/mlowery/label$",
+    ]
+    # no annotations except these are kept
+    keep-annotations = [
+        "^github.com/mlowery/annotation$",
+    ]
+    # usually this is just /spec
+    keep-paths = [
+        "/spec",
+        "/status/phase",
+    ]
+    # paths to delete from keep-paths
+    ignore-paths = []
+    # regexes for names to ignore
+    ignore-names = [
+        "^default$",
+        "^kube-system$",
+    ]
+    # list of paths along with regexes separated by `=`; objects without a match will be ignored
+    path-value-filters = [
+        "/status/phase=^Active$",
+    ]
