@@ -137,9 +137,12 @@ func MkCacheFilename(workDir string, context, gvkString, ext string) string {
 	return filepath.Join(workDir, fmt.Sprintf("%s-%s.%s", gvkString, context, ext))
 }
 
-func Sanitize(l *zap.SugaredLogger, obj *unstructured.Unstructured, ignoreNames []*regexp.Regexp, pathValueFilters map[string]*regexp.Regexp, keepAnnotations, keepLabels []*regexp.Regexp, keepPaths, ignorePaths []string) (*unstructured.Unstructured, error) {
+func Sanitize(l *zap.SugaredLogger, obj *unstructured.Unstructured, ignoreNames []*regexp.Regexp, pathValueFilters map[string]*regexp.Regexp, keepAnnotations, keepLabels []*regexp.Regexp, keepPaths, ignorePaths []string, keepDeleted bool) (*unstructured.Unstructured, error) {
 	key := genKey(obj)
 	if matchesAny(key, ignoreNames) {
+		return nil, nil
+	}
+	if obj.GetDeletionTimestamp() != nil && !keepDeleted {
 		return nil, nil
 	}
 	for path, valueRegexp := range pathValueFilters {

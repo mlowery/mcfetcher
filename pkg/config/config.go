@@ -21,6 +21,7 @@ type rawGVK struct {
 	IgnorePaths      []string `mapstructure:"ignore-paths"`
 	IgnoreNames      []string `mapstructure:"ignore-names"`
 	PathValueFilters []string `mapstructure:"path-value-filters"`
+	KeepDeleted      bool     `mapstructure:"keep-deleted"`
 }
 
 type GVK struct {
@@ -30,6 +31,7 @@ type GVK struct {
 	IgnorePaths      []string
 	IgnoreNames      []*regexp.Regexp
 	PathValueFilters map[string]*regexp.Regexp
+	KeepDeleted      bool
 	GroupVersionKind schema.GroupVersionKind
 }
 
@@ -71,6 +73,7 @@ func ReadGVKOrDie() map[string]*GVK {
 			KeepPaths:        v.KeepPaths,
 			IgnorePaths:      v.IgnorePaths,
 			PathValueFilters: readPathValueFiltersOrDie(v.PathValueFilters),
+			KeepDeleted:      v.KeepDeleted,
 		}
 		group, version, kind := parseGVKString(k)
 		gvkConfig.GroupVersionKind = schema.GroupVersionKind{group, version, kind}

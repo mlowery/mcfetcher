@@ -167,7 +167,8 @@ func extractList(logger *zap.SugaredLogger, errCh chan<- error, object runtime.O
 	for _, item := range items {
 		uObj := item.(*unstructured.Unstructured)
 		sanObj, err := util.Sanitize(logger, uObj, gvkConfig.IgnoreNames, gvkConfig.PathValueFilters,
-			gvkConfig.KeepAnnotations, gvkConfig.KeepLabels, gvkConfig.KeepPaths, gvkConfig.IgnorePaths)
+			gvkConfig.KeepAnnotations, gvkConfig.KeepLabels, gvkConfig.KeepPaths, gvkConfig.IgnorePaths,
+			gvkConfig.KeepDeleted)
 		if err != nil {
 			errCh <- oerrors.New(err, "failed to sanitize",
 				"gvk", uObj.GetObjectKind().GroupVersionKind().String(), "name", uObj.GetName())

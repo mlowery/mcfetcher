@@ -2,6 +2,12 @@
 
 Fetch, filter, and sanitize objects across Kubernetes clusters in parallel.
 
+## Building
+
+```sh
+$ go build -o mcfetcher ./main.go
+```
+
 ## Running
 
 ```sh
