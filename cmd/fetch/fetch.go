@@ -91,7 +91,7 @@ func worker(l *zap.SugaredLogger, contextCh <-chan string, errCh chan<- error, w
 		logger.Infow("processing context")
 
 		for gvkString, gvkConfig := range gvkConfigs {
-			logger = logger.With("gvk", gvkString)
+			logger := logger.With("gvk", gvkString)
 			// if there is a file in the work-dir, don't call Kube since that is the most expensive part
 			filename := util.MkCacheFilename(workDir, context, gvkString, "json")
 
@@ -129,21 +129,21 @@ func worker(l *zap.SugaredLogger, contextCh <-chan string, errCh chan<- error, w
 				rawList, _, err := objPager.List(ctx.TODO(), metav1.ListOptions{})
 				rtt := time.Since(start)
 				if err != nil {
-					oerrors.New(err, "failed to list",
+					errCh <- oerrors.New(err, "failed to list",
 						"gvk", gvkString, "context", context)
 					continue
 				}
 				logger.Infow("called Kube", "duration", rtt)
 				rawObjects, err := extractList(logger, errCh, rawList, gvkConfig)
 				if err != nil {
-					oerrors.New(err, "failed to extract list",
+					errCh <- oerrors.New(err, "failed to extract list",
 						"gvk", gvkString, "context", context)
 					continue
 				}
 				logger.Infow("caching", "filename", filename, "objCount", len(rawObjects))
 				err = util.WriteRawObjects(filename, rawObjects)
 				if err != nil {
-					oerrors.New(err, "failed to write records",
+					errCh <- oerrors.New(err, "failed to write records",
 						"gvk", gvkString, "context", context)
 					continue
 				}
