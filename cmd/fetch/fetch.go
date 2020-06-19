@@ -95,13 +95,13 @@ func worker(l *zap.SugaredLogger, contextCh <-chan string, errCh chan<- error, w
 			// if there is a file in the work-dir, don't call Kube since that is the most expensive part
 			filename := util.MkCacheFilename(workDir, context, gvkString, "json")
 
-			rawObjects, err := util.ReadRawObjects(filename)
+			sanObjects, err := util.ReadRawObjects(filename)
 			if err != nil {
 				errCh <- oerrors.New(err, "failed to read cached records",
 					"gvk", gvkString, "context", context, "filename", filename)
 				continue
 			}
-			if rawObjects == nil {
+			if sanObjects == nil {
 				restConfig, err := getClientConfig(context, config.ReadString("kubeconfig", util.InHomeDirOrDie(".kube/config"))).ClientConfig()
 				if err != nil {
 					errCh <- oerrors.New(err, "failed to get rest config",
@@ -134,23 +134,28 @@ func worker(l *zap.SugaredLogger, contextCh <-chan string, errCh chan<- error, w
 					continue
 				}
 				logger.Infow("called Kube", "duration", rtt)
-				rawObjects, err := extractList(logger, errCh, rawList, gvkConfig)
+				origObjects, sanObjects, err := extractList(logger, errCh, rawList, gvkConfig)
 				if err != nil {
 					errCh <- oerrors.New(err, "failed to extract list",
 						"gvk", gvkString, "context", context)
 					continue
 				}
-				logger.Infow("caching", "filename", filename, "objCount", len(rawObjects))
-				err = util.WriteRawObjects(filename, rawObjects)
+				logger.Infow("caching", "filename", filename, "origObjCount", len(origObjects), "sanitizedObjCount", len(sanObjects))
+				err = util.WriteRawObjects(filename, origObjects)
 				if err != nil {
-					errCh <- oerrors.New(err, "failed to write records",
+					errCh <- oerrors.New(err, "failed to write original records",
 						"gvk", gvkString, "context", context)
 					continue
 				}
-
+				err = util.WriteRawObjects(filename, sanObjects)
+				if err != nil {
+					errCh <- oerrors.New(err, "failed to write sanitized records",
+						"gvk", gvkString, "context", context)
+					continue
+				}
 			} else {
 				logger.Infow("using cached results (to skip cache, delete file)",
-					"filename", filename, "objCount", len(rawObjects))
+					"filename", filename, "sanitizedObjCount", len(sanObjects))
 			}
 		}
 	}
@@ -158,14 +163,15 @@ func worker(l *zap.SugaredLogger, contextCh <-chan string, errCh chan<- error, w
 }
 
 func extractList(logger *zap.SugaredLogger, errCh chan<- error, object runtime.Object,
-	gvkConfig *config.GVK) ([]*unstructured.Unstructured, error) {
+	gvkConfig *config.GVK) ([]*unstructured.Unstructured, []*unstructured.Unstructured, error) {
 	items, err := meta.ExtractList(object)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to extract list")
+		return nil, nil, errors.Wrapf(err, "failed to extract list")
 	}
-	var l []*unstructured.Unstructured
+	var orig, l []*unstructured.Unstructured
 	for _, item := range items {
 		uObj := item.(*unstructured.Unstructured)
+		orig = append(orig, uObj)
 		sanObj, err := util.Sanitize(logger, uObj, gvkConfig.IgnoreNames, gvkConfig.PathValueFilters,
 			gvkConfig.KeepAnnotations, gvkConfig.KeepLabels, gvkConfig.KeepPaths, gvkConfig.IgnorePaths,
 			gvkConfig.KeepDeleted)
@@ -178,7 +184,7 @@ func extractList(logger *zap.SugaredLogger, errCh chan<- error, object runtime.O
 			l = append(l, sanObj)
 		}
 	}
-	return l, nil
+	return orig, l, nil
 }
 
 func getClientConfig(context, kubeconfig string) clientcmd.ClientConfig {
