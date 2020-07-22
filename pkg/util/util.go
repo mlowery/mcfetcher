@@ -134,7 +134,7 @@ func genKey(obj *unstructured.Unstructured) string {
 }
 
 func MkCacheFilename(workDir string, context, gvkString, ext string) string {
-	return filepath.Join(workDir, fmt.Sprintf("%s-%s.%s", gvkString, context, ext))
+	return filepath.Join(workDir, gvkString, fmt.Sprintf("%s.%s", context, ext))
 }
 
 func Sanitize(l *zap.SugaredLogger, obj *unstructured.Unstructured, ignoreNames []*regexp.Regexp, pathValueFilters map[string]*regexp.Regexp, keepAnnotations, keepLabels []*regexp.Regexp, keepPaths, ignorePaths []string, keepDeleted bool) (*unstructured.Unstructured, error) {
