@@ -47,11 +47,19 @@ func EnsureWorkDir(subDirs ...string) (string, error) {
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to create absolute path")
 	}
-	err = os.MkdirAll(workDir, 0751)
+	err = ensureDir(workDir)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to create directory")
 	}
 	return workDir, nil
+}
+
+func ensureDir(dir string) error {
+	err := os.MkdirAll(dir, 0751)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create directory %q", dir)
+	}
+	return nil
 }
 
 func ReadRawObjects(path string) ([]*unstructured.Unstructured, error) {
@@ -133,8 +141,13 @@ func genKey(obj *unstructured.Unstructured) string {
 	return obj.GetName()
 }
 
-func MkCacheFilename(workDir string, context, gvkString, ext string) string {
-	return filepath.Join(workDir, gvkString, fmt.Sprintf("%s.%s", context, ext))
+func MkCacheFilename(workDir string, context, gvkString, ext string) (string, error) {
+	d := filepath.Join(workDir, gvkString)
+	err := ensureDir(d)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to ensure directory")
+	}
+	return filepath.Join(d, fmt.Sprintf("%s.%s", context, ext)), nil
 }
 
 func Sanitize(l *zap.SugaredLogger, obj *unstructured.Unstructured, ignoreNames []*regexp.Regexp, pathValueFilters map[string]*regexp.Regexp, keepAnnotations, keepLabels []*regexp.Regexp, keepPaths, ignorePaths []string, keepDeleted bool) (*unstructured.Unstructured, error) {

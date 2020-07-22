@@ -93,7 +93,12 @@ func worker(l *zap.SugaredLogger, contextCh <-chan string, errCh chan<- error, w
 		for gvkString, gvkConfig := range gvkConfigs {
 			logger := logger.With("gvk", gvkString)
 			// if there is a file in the work-dir, don't call Kube since that is the most expensive part
-			filename := util.MkCacheFilename(workDir, context, gvkString, "json")
+			filename, err := util.MkCacheFilename(workDir, context, gvkString, "json")
+			if err != nil {
+				errCh <- oerrors.New(err, "failed to ensure cache dir",
+					"gvk", gvkString, "context", context)
+				continue
+			}
 
 			sanObjects, err := util.ReadRawObjects(filename)
 			if err != nil {
